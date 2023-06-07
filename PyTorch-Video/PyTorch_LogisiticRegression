@@ -1,0 +1,89 @@
+import torch
+import torch.nn as nn
+import numpy as np
+from sklearn import datasets
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+# 1) prepare date
+bc = datasets.load_breast_cancer()
+X, y = bc.data, bc.target
+
+n_samples, n_features = X.shape
+# print(n_samples, n_features) #check shape
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
+
+#scale features
+#do this with logistical regression
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+#convert data to tensors
+X_train = torch.from_numpy(X_train.astype(np.float32))
+X_test = torch.from_numpy(X_test.astype(np.float32))
+y_train = torch.from_numpy(y_train.astype(np.float32))
+y_test = torch.from_numpy(y_test.astype(np.float32))
+
+#convert y data into columns for matrix multiplication
+y_train = y_train.view(y_train.shape[0],1)
+y_test = y_test.view(y_test.shape[0],1)
+
+
+# 2) model
+#function = (weights * input) + bias, sigmoid at the end
+class LogisticRegression(nn.Module):
+
+    def __init__(self, n_input_features):
+        super(LogisticRegression, self).__init__()
+        self.linear = nn.Linear(n_input_features, 1)
+
+    def forward(self, x):
+        y_predicted = torch.sigmoid(self.linear(x))
+        return y_predicted
+    
+model = LogisticRegression(n_features)
+
+
+# 3) Loss and optimizer
+learningRate = 0.01
+criterion = nn.BCELoss()
+    #binary cross entropy loss
+
+optimizer = torch.optim.Rprop(model.parameters(), lr=learningRate)
+    #optimizes the parameters to get close to values we want
+
+
+# 4) training loop
+numEpochs = 50000
+for epoch in range(numEpochs):
+    #forward pass 
+    y_predicted = model(X_train)
+
+    #loss
+    loss = criterion(y_predicted, y_train)
+
+    #backward pass
+    loss.backward()
+
+    #update weights
+    optimizer.step()
+
+    #empty/zero gradient
+    optimizer.zero_grad()
+
+    #print info
+    if (epoch + 1) % 10 == 0:
+        print(f'epoch: {epoch+1}, loss = {loss.item():.4f}')
+
+with torch.no_grad():
+    y_predicted = model(X_test)
+    y_predicted_cls = y_predicted.round()
+    accuracy = y_predicted_cls.eq(y_test).sum() / float(y_test.shape[0])
+    print(f'accuracy = {accuracy:.4f}')
+
+
+
+
+        
