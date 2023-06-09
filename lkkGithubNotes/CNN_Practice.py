@@ -301,4 +301,21 @@ for idx in np.arange(40):
     ax.set_title("{} ({})".format(classes[preds[idx]], classes[labels[idx]]),
                  color=("green" if preds[idx]==labels[idx].item() else "red"))
     
+#test (Find % accuracy)
+with torch.no_grad():
+    n_correct = 0
+    n_samples = 0
+    for images, labels in test_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        outputs = model(images)
+
+        #will return value and index
+        #underscore for value bc we dont care about that
+        _, predictions = torch.max(outputs,1)
+        n_samples += labels.shape[0]
+        n_correct += (predictions == labels).sum().item()
+
+    acc = 100 * n_correct / n_samples
+    print(f'Accuracy: {acc}')
         
