@@ -311,7 +311,7 @@ with torch.no_grad():
         outputs = model(images)
 
         #will return value and index
-        #underscore for value bc we dont care about that
+        #underscore for value because we dont care about the actual value
         _, predictions = torch.max(outputs,1)
         n_samples += labels.shape[0]
         n_correct += (predictions == labels).sum().item()
